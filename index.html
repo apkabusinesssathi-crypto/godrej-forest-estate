@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Card Generator</title>
+<style>
+:root { --navy:#1a237e; --gold:#f9a825; --border:#333; }
+*{box-sizing:border-box;margin:0;padding:0;}
+
+@media screen{
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#1a237e 0%,#1565c0 100%);min-height:100vh;padding:24px 16px;color:#111;}
+.app-title{text-align:center;color:#fff;font-size:1.7rem;font-weight:900;margin-bottom:4px;letter-spacing:1px;}
+.app-sub{text-align:center;color:rgba(255,255,255,0.75);font-size:.88rem;margin-bottom:24px;}
+.form-card{background:#fff;border-radius:14px;padding:28px;max-width:980px;margin:0 auto 32px;box-shadow:0 16px 48px rgba(0,0,0,.3);}
+.sec-title{color:var(--navy);font-size:.88rem;font-weight:900;border-left:4px solid var(--gold);padding-left:10px;margin:22px 0 12px;text-transform:uppercase;letter-spacing:.5px;}
+.sec-title:first-of-type{margin-top:0;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+label{display:block;font-size:.72rem;font-weight:700;color:#555;margin-bottom:3px;text-transform:uppercase;}
+input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1.5px solid #ccc;border-radius:7px;font-size:.88rem;font-family:inherit;}
+input:focus{outline:none;border-color:var(--navy);}
+.tbl-wrap{overflow-x:auto;margin-top:8px;}
+table.inp-tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+table.inp-tbl th{background:var(--navy);color:#fff;padding:6px 5px;text-align:center;font-size:.7rem;white-space:nowrap;}
+table.inp-tbl td{padding:3px 3px;border-bottom:1px solid #eee;text-align:center;}
+table.inp-tbl td.sname{text-align:left;padding-left:6px;}
+table.inp-tbl input{width:52px;padding:3px 4px;text-align:center;font-size:.78rem;border-radius:4px;border:1.5px solid #ccc;}
+table.inp-tbl input:focus{border-color:var(--navy);outline:none;}
+.btn-add{background:#2e7d32;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:.82rem;font-weight:700;cursor:pointer;}
+.btn-del{background:#c62828;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.78rem;font-weight:700;cursor:pointer;margin-left:4px;}
+.btn-generate{display:block;margin:24px auto 0;background:linear-gradient(135deg,var(--navy),#1565c0);color:#fff;border:none;border-radius:10px;padding:13px 44px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.4px;box-shadow:0 6px 18px rgba(26,35,126,.4);}
+.btn-generate:hover{filter:brightness(1.1);}
+#report-output{display:none;}
+.action-bar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+.btn-back{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);border-radius:8px;padding:9px 24px;font-weight:700;font-size:.88rem;cursor:pointer;}
+.btn-act{background:#fff;color:var(--navy);border:2px solid #fff;border-radius:8px;padding:9px 24px;font-weight:700;font-size:.88rem;cursor:pointer;}
+.btn-act:hover{background:var(--gold);border-color:var(--gold);color:#000;}
+#rc-wrap{max-width:800px;margin:0 auto;background:#fff;border:3px solid var(--navy);border-radius:4px;box-shadow:0 16px 48px rgba(0,0,0,.3);overflow:hidden;}
+.new-subj-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.new-subj-row input[type=text]{max-width:200px;}
+}
+
+@media print{
+body{background:#fff!important;padding:0!important;margin:0!important;}
+.app-title,.app-sub,.form-card,.action-bar,.no-print{display:none!important;}
+#report-output{display:block!important;}
+#rc-wrap{border:2px solid #000!important;box-shadow:none!important;max-width:100%!important;border-radius:0!important;}
+@page{margin:8mm;size:A4 portrait;}
+}
+
+/* Report card internal — works both screen+print */
+#rc-wrap{font-family:Arial,sans-serif;font-size:12px;color:#000;}
+#rc-inner{padding:14px 18px 18px;}
+.rc-hdr{display:flex;align-items:center;gap:12px;border-bottom:3px double var(--navy);padding-bottom:8px;margin-bottom:5px;}
+.rc-logo-box{width:60px;height:60px;border-radius:50%;border:2px solid var(--navy);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;font-size:.5rem;font-weight:900;text-align:center;}
+.rc-logo-box img{width:100%;height:100%;object-fit:cover;}
+.rc-school-center{flex:1;text-align:center;}
+.rc-sname{font-size:1.2rem;font-weight:900;color:var(--navy);text-transform:uppercase;line-height:1.2;}
+.rc-sloc{font-size:.75rem;color:#444;margin-top:2px;}
+.rc-stitle{font-size:.85rem;font-weight:900;color:var(--navy);text-decoration:underline;margin-top:3px;text-transform:uppercase;letter-spacing:2px;}
+.rc-codes{display:flex;justify-content:space-between;font-size:.72rem;margin:4px 0;}
+.rc-banner{background:var(--navy);color:#fff;text-align:center;font-weight:900;font-size:.78rem;padding:3px;letter-spacing:1px;margin-bottom:7px;}
+.si-grid{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid #333;margin-bottom:8px;}
+.si-cell{display:flex;align-items:center;border-bottom:1px solid #bbb;border-right:1px solid #bbb;padding:3px 7px;gap:5px;}
+.si-cell:nth-child(2n){border-right:none;}
+.si-cell:nth-last-child(-n+2){border-bottom:none;}
+.si-lbl{font-size:.68rem;font-weight:700;color:#333;min-width:88px;white-space:nowrap;}
+.si-val{font-size:.78rem;font-weight:600;}
+.rc-tbl{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:.68rem;}
+.rc-tbl th,.rc-tbl td{border:1px solid #333;padding:2px 4px;text-align:center;}
+.rc-tbl th{background:var(--navy);color:#fff;font-weight:700;}
+.rc-tbl .gh{background:#3949ab;color:#fff;font-size:.63rem;}
+.rc-tbl .subj{text-align:left;font-weight:700;background:#f0f0f0;padding-left:6px;white-space:nowrap;}
+.rc-tbl .tot-row td{background:#e8eaf6;font-weight:900;}
+.chart-wrap{margin:6px 0 10px;}
+.chart-title{text-align:center;font-weight:900;font-size:.78rem;text-decoration:underline;margin-bottom:4px;}
+.bars-area{display:flex;align-items:flex-end;gap:6px;height:100px;border-bottom:2px solid #333;padding:0 6px;}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;}
+.bar-num{font-size:.6rem;font-weight:900;margin-bottom:1px;}
+.bar-block{width:100%;background:var(--navy);}
+.bar-lbls{display:flex;gap:6px;padding:2px 6px 0;}
+.bar-lbl{flex:1;text-align:center;font-size:.54rem;font-weight:700;line-height:1.2;}
+.rc-sum{display:flex;border:1.5px solid #333;margin-bottom:8px;}
+.sum-cell{flex:1;padding:4px 5px;border-right:1px solid #bbb;text-align:center;}
+.sum-cell:last-child{border-right:none;}
+.sum-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;color:#555;}
+.sum-val{font-size:.85rem;font-weight:900;color:var(--navy);}
+.sum-val.pass{color:#2e7d32;}
+.sum-val.fail{color:#c62828;}
+.grade-title{text-align:center;font-weight:900;font-size:.72rem;text-decoration:underline;text-transform:uppercase;margin-bottom:2px;}
+.grade-sub{text-align:center;font-size:.63rem;color:#444;margin-bottom:4px;}
+.gt{width:100%;border-collapse:collapse;font-size:.65rem;}
+.gt th{background:var(--navy);color:#fff;padding:2px 6px;}
+.gt td{border:1px solid #bbb;padding:2px 6px;text-align:center;}
+.gt tr:nth-child(even) td{background:#f5f5f5;}
+.rc-sigs{display:flex;justify-content:space-between;margin-top:18px;padding-top:6px;border-top:1px solid #bbb;}
+.rc-sig{text-align:center;font-size:.65rem;font-weight:700;color:#333;}
+.sig-line{width:130px;border-top:1.5px solid #333;margin:22px auto 3px;}
+</style>
+</head>
+<body>
+
+<div class="app-title">📋 Report Card Generator</div>
+<div class="app-sub">Fill in details, add/remove subjects, then generate, download or print</div>
+
+<!-- ======== FORM ======== -->
+<div class="form-card" id="form-section">
+
+  <div class="sec-title">🏫 School Information</div>
+  <div class="g2">
+    <div><label>School Name</label><input type="text" id="schoolName" value="PARAS BAL NIKETAN JR. HIGH SCHOOL"></div>
+    <div><label>School Location</label><input type="text" id="schoolLoc" value="Kishanpur Baral (Baghpat)"></div>
+    <div><label>School Code</label><input type="text" id="schoolCode" value="4409"></div>
+    <div><label>District Code</label><input type="text" id="distCode" value="13"></div>
+  </div>
+
+  <!-- Logo upload -->
+  <div style="margin-top:14px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+    <div>
+      <label>School Logo (optional)</label>
+      <input type="file" id="logoFile" accept="image/*" style="padding:6px 8px;font-size:.82rem;border:1.5px dashed #aaa;border-radius:8px;background:#fafafa;cursor:pointer;">
+      <div style="font-size:.7rem;color:#888;margin-top:3px;">PNG, JPG, SVG supported. Will appear as circular logo on report card.</div>
+    </div>
+    <div id="logoPreviewWrap" style="display:none;flex-direction:column;align-items:center;gap:6px;">
+      <img id="logoPreview" src="" alt="Logo Preview" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--navy);object-fit:cover;">
+      <button onclick="removeLogo()" style="background:#c62828;color:#fff;border:none;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer;">✕ Remove</button>
+    </div>
+    <div id="logoPlaceholder" style="width:64px;height:64px;border-radius:50%;border:2px dashed #bbb;display:flex;align-items:center;justify-content:center;background:#f5f5f5;flex-shrink:0;">
+      <span style="font-size:.6rem;color:#aaa;text-align:center;line-height:1.3">No<br>Logo</span>
+    </div>
+  </div>
+
+  <div class="sec-title">🎓 Student Details</div>
+  <div class="g3">
+    <div><label>Session</label><input type="text" id="session" value="2025-26"></div>
+    <div><label>Roll No.</label><input type="text" id="rollNo" value="9"></div>
+    <div><label>Reg. No.</label><input type="text" id="regNo" value="7565"></div>
+  </div>
+  <div class="g2" style="margin-top:10px">
+    <div><label>Student Name</label><input type="text" id="studentName" value="PREET"></div>
+    <div><label>Father's Name</label><input type="text" id="fatherName" value="DEEPAK KUMAR"></div>
+    <div><label>Mother's Name</label><input type="text" id="motherName" value="PRAMILA"></div>
+    <div><label>Date of Birth (DD-MM-YYYY)</label><input type="text" id="dob" value="18-09-2021"></div>
+    <div><label>Class</label><input type="text" id="className" value="NUR."></div>
+    <div><label>Section</label><input type="text" id="section" value="A"></div>
+  </div>
+
+  <div class="sec-title">📊 Subjects & Marks</div>
+  <p style="font-size:.76rem;color:#666;margin-bottom:8px;">MM = Max Marks &nbsp;|&nbsp; MO = Marks Obtained &nbsp;|&nbsp; 1T / 2T = Monthly Term &nbsp;|&nbsp; HY = Half Yearly &nbsp;|&nbsp; AN = Annual</p>
+
+  <div class="tbl-wrap">
+    <table class="inp-tbl">
+      <thead>
+        <tr>
+          <th rowspan="2" style="min-width:110px">Subject</th>
+          <th colspan="2">1st Term</th>
+          <th colspan="2">2nd Term</th>
+          <th>HY MM</th><th>HY MO</th>
+          <th>AN MM</th><th>AN MO</th>
+          <th rowspan="2">Remove</th>
+        </tr>
+        <tr>
+          <th>MM</th><th>MO</th><th>MM</th><th>MO</th>
+          <th></th><th></th><th></th><th></th>
+        </tr>
+      </thead>
+      <tbody id="subjBody"></tbody>
+    </table>
+  </div>
+
+  <div class="new-subj-row">
+    <input type="text" id="newSubjName" placeholder="New subject name (e.g. SCIENCE)">
+    <button class="btn-add" onclick="addSubject()">+ Add Subject</button>
+  </div>
+
+  <button class="btn-generate" onclick="generateReport()">✨ Generate Report Card</button>
+</div>
+
+<!-- ======== OUTPUT ======== -->
+<div id="report-output">
+  <div class="action-bar no-print">
+    <button class="btn-back" onclick="goBack()">← Edit Details</button>
+    <button class="btn-act" id="dlBtn">⬇ Download PNG</button>
+    <button class="btn-act" onclick="window.print()">🖨 Print / Save PDF</button>
+  </div>
+
+  <div id="rc-wrap">
+    <div id="rc-inner">
+
+      <div class="rc-hdr">
+        <div class="rc-logo-box" id="rcLogoBox"><span id="rcLogoText" style="line-height:1.3;font-size:.45rem;text-align:center">SCHOOL<br>LOGO</span></div>
+        <div class="rc-school-center">
+          <div class="rc-sname" id="rc-sname"></div>
+          <div class="rc-sloc"  id="rc-sloc"></div>
+          <div class="rc-stitle">Marks Sheet</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <div class="rc-codes">
+        <div>School Code : <b id="rc-scode"></b></div>
+        <div>Distt. Code : <b id="rc-dcode"></b></div>
+      </div>
+      <div class="rc-banner">Session : <span id="rc-session"></span></div>
+
+      <div class="si-grid">
+        <div class="si-cell"><span class="si-lbl">Student Name</span><span class="si-val" id="rc-stuname"></span></div>
+        <div class="si-cell"><span class="si-lbl">Roll No.</span><span class="si-val" id="rc-rollno"></span></div>
+        <div class="si-cell"><span class="si-lbl">Father's Name</span><span class="si-val" id="rc-fname"></span></div>
+        <div class="si-cell"><span class="si-lbl">Reg. No.</span><span class="si-val" id="rc-regno"></span></div>
+        <div class="si-cell"><span class="si-lbl">Mother's Name</span><span class="si-val" id="rc-mname"></span></div>
+        <div class="si-cell"><span class="si-lbl">D.O.B.</span><span class="si-val" id="rc-dob"></span></div>
+        <div class="si-cell"><span class="si-lbl">Class</span><span class="si-val" id="rc-class"></span></div>
+        <div class="si-cell"><span class="si-lbl">Section</span><span class="si-val" id="rc-sec"></span></div>
+      </div>
+
+      <table class="rc-tbl">
+        <thead>
+          <tr>
+            <th rowspan="3" style="min-width:80px">Subject</th>
+            <th colspan="4" class="gh">Monthly Exam</th>
+            <th colspan="2" class="gh">Half Yearly Exam</th>
+            <th colspan="2" class="gh">Annual Exam</th>
+            <th colspan="3" class="gh">Grand Total</th>
+          </tr>
+          <tr>
+            <th colspan="2">1ST TERM</th><th colspan="2">2ND TERM</th>
+            <th rowspan="2">M.M.</th><th rowspan="2">M.O.</th>
+            <th rowspan="2">M.M.</th><th rowspan="2">M.O.</th>
+            <th rowspan="2">M.M.</th><th rowspan="2">M.O.</th>
+            <th rowspan="2">Grade</th>
+          </tr>
+          <tr><th>M.M.</th><th>M.O.</th><th>M.M.</th><th>M.O.</th></tr>
+        </thead>
+        <tbody id="rc-tbody"></tbody>
+      </table>
+
+      <div class="chart-wrap">
+        <div class="chart-title">Marks Obtained</div>
+        <div class="bars-area" id="rc-bars"></div>
+        <div class="bar-lbls"  id="rc-barlbls"></div>
+      </div>
+
+      <div class="rc-sum">
+        <div class="sum-cell"><div class="sum-lbl">Max. Marks</div><div class="sum-val" id="rc-maxm"></div></div>
+        <div class="sum-cell"><div class="sum-lbl">Marks Obtained</div><div class="sum-val" id="rc-mobs"></div></div>
+        <div class="sum-cell"><div class="sum-lbl">Percentage</div><div class="sum-val" id="rc-pct"></div></div>
+        <div class="sum-cell"><div class="sum-lbl">Result</div><div class="sum-val" id="rc-result"></div></div>
+        <div class="sum-cell"><div class="sum-lbl">Rank in Class</div><div class="sum-val">-</div></div>
+        <div class="sum-cell"><div class="sum-lbl">Grace Mark</div><div class="sum-val">-</div></div>
+      </div>
+
+      <div class="grade-title">Scholastic Area</div>
+      <div class="grade-sub">(Grades are awarded on a 9-point grading scale as follows)</div>
+      <table class="gt">
+        <thead><tr><th>Marks Range</th><th>Grade</th><th>Marks Range</th><th>Grade</th></tr></thead>
+        <tbody>
+          <tr><td>91-100</td><td>A1</td><td>51-60</td><td>C1</td></tr>
+          <tr><td>81-90</td><td>A2</td><td>41-50</td><td>C2</td></tr>
+          <tr><td>71-80</td><td>B1</td><td>33-40</td><td>D</td></tr>
+          <tr><td>61-70</td><td>B2</td><td>32 &amp; Below</td><td>E (Failed)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="rc-sigs">
+        <div class="rc-sig"><div class="sig-line"></div>Sign of Class Teacher</div>
+        <div class="rc-sig"><div class="sig-line"></div>Examination Controller</div>
+        <div class="rc-sig"><div class="sig-line"></div>Sign of Principal</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let subjects = [
+  {name:'HINDI',       t1mm:10,t1mo:5, t2mm:10,t2mo:8, hymm:50,hymo:42,anmm:50,anmo:50},
+  {name:'HINDI ORAL',  t1mm:10,t1mo:6, t2mm:10,t2mo:10,hymm:50,hymo:30,anmm:50,anmo:45},
+  {name:'ENGLISH',     t1mm:10,t1mo:6, t2mm:10,t2mo:9, hymm:50,hymo:40,anmm:50,anmo:50},
+  {name:'ENGLISH ORAL',t1mm:10,t1mo:7, t2mm:10,t2mo:10,hymm:50,hymo:50,anmm:50,anmo:40},
+  {name:'MATH',        t1mm:10,t1mo:8, t2mm:10,t2mo:8, hymm:50,hymo:35,anmm:50,anmo:48},
+  {name:'MATH ORAL',   t1mm:10,t1mo:6, t2mm:10,t2mo:10,hymm:50,hymo:40,anmm:50,anmo:50},
+  {name:'ART',         t1mm:10,t1mo:5, t2mm:10,t2mo:9, hymm:50,hymo:35,anmm:50,anmo:47},
+  {name:'POEM',        t1mm:10,t1mo:6, t2mm:10,t2mo:10,hymm:50,hymo:37,anmm:50,anmo:45},
+];
+
+function getGrade(pct){
+  if(pct>=91)return'A1';if(pct>=81)return'A2';if(pct>=71)return'B1';
+  if(pct>=61)return'B2';if(pct>=51)return'C1';if(pct>=41)return'C2';
+  if(pct>=33)return'D';return'E (Failed)';
+}
+function n(v){return parseFloat(v)||0;}
+function set(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
+
+function syncFromForm(){
+  document.querySelectorAll('#subjBody tr').forEach((tr,i)=>{
+    subjects[i].name =tr.querySelector('.sn').value.trim().toUpperCase()||subjects[i].name;
+    subjects[i].t1mm =n(tr.querySelector('.f0').value);
+    subjects[i].t1mo =n(tr.querySelector('.f1').value);
+    subjects[i].t2mm =n(tr.querySelector('.f2').value);
+    subjects[i].t2mo =n(tr.querySelector('.f3').value);
+    subjects[i].hymm =n(tr.querySelector('.f4').value);
+    subjects[i].hymo =n(tr.querySelector('.f5').value);
+    subjects[i].anmm =n(tr.querySelector('.f6').value);
+    subjects[i].anmo =n(tr.querySelector('.f7').value);
+  });
+}
+
+function buildFormTable(){
+  const tb=document.getElementById('subjBody');
+  tb.innerHTML='';
+  subjects.forEach((s,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="sname"><input type="text" class="sn" value="${s.name}" style="width:110px;font-size:.75rem;padding:3px 5px"></td>
+      <td><input type="number" class="f0" value="${s.t1mm}" min="0"></td>
+      <td><input type="number" class="f1" value="${s.t1mo}" min="0"></td>
+      <td><input type="number" class="f2" value="${s.t2mm}" min="0"></td>
+      <td><input type="number" class="f3" value="${s.t2mo}" min="0"></td>
+      <td><input type="number" class="f4" value="${s.hymm}" min="0"></td>
+      <td><input type="number" class="f5" value="${s.hymo}" min="0"></td>
+      <td><input type="number" class="f6" value="${s.anmm}" min="0"></td>
+      <td><input type="number" class="f7" value="${s.anmo}" min="0"></td>
+      <td><button class="btn-del" onclick="removeSubject(${i})">✕ Remove</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function addSubject(){
+  syncFromForm();
+  const nm=document.getElementById('newSubjName').value.trim().toUpperCase();
+  if(!nm){alert('Enter a subject name.');return;}
+  subjects.push({name:nm,t1mm:10,t1mo:0,t2mm:10,t2mo:0,hymm:50,hymo:0,anmm:50,anmo:0});
+  document.getElementById('newSubjName').value='';
+  buildFormTable();
+}
+
+function removeSubject(i){
+  if(subjects.length<=1){alert('At least one subject is required.');return;}
+  syncFromForm();
+  subjects.splice(i,1);
+  buildFormTable();
+}
+
+function generateReport(){
+  syncFromForm();
+  applyLogoToCard();
+  set('rc-sname',  document.getElementById('schoolName').value);
+  set('rc-sloc',   document.getElementById('schoolLoc').value);
+  set('rc-scode',  document.getElementById('schoolCode').value);
+  set('rc-dcode',  document.getElementById('distCode').value);
+  set('rc-session',document.getElementById('session').value);
+  set('rc-stuname',document.getElementById('studentName').value);
+  set('rc-fname',  document.getElementById('fatherName').value);
+  set('rc-mname',  document.getElementById('motherName').value);
+  set('rc-dob',    document.getElementById('dob').value);
+  set('rc-rollno', document.getElementById('rollNo').value);
+  set('rc-regno',  document.getElementById('regNo').value);
+  set('rc-class',  document.getElementById('className').value);
+  set('rc-sec',    document.getElementById('section').value);
+
+  const tb=document.getElementById('rc-tbody');
+  tb.innerHTML='';
+  let totMM=0,totMO=0,tT1MM=0,tT1MO=0,tT2MM=0,tT2MO=0,tHYMM=0,tHYMO=0,tANMM=0,tANMO=0;
+  const barData=[];
+
+  subjects.forEach(s=>{
+    const gMM=s.t1mm+s.t2mm+s.hymm+s.anmm;
+    const gMO=s.t1mo+s.t2mo+s.hymo+s.anmo;
+    const pct=gMM>0?(gMO/gMM)*100:0;
+    tT1MM+=s.t1mm;tT1MO+=s.t1mo;tT2MM+=s.t2mm;tT2MO+=s.t2mo;
+    tHYMM+=s.hymm;tHYMO+=s.hymo;tANMM+=s.anmm;tANMO+=s.anmo;
+    totMM+=gMM;totMO+=gMO;
+    barData.push({label:s.name,mo:gMO});
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="subj">${s.name}</td>
+      <td>${s.t1mm}</td><td>${s.t1mo}</td>
+      <td>${s.t2mm}</td><td>${s.t2mo}</td>
+      <td>${s.hymm}</td><td>${s.hymo}</td>
+      <td>${s.anmm}</td><td>${s.anmo}</td>
+      <td>${gMM}</td><td>${gMO}</td>
+      <td><b>${getGrade(pct)}</b></td>`;
+    tb.appendChild(tr);
+  });
+
+  const ttr=document.createElement('tr');
+  ttr.className='tot-row';
+  const gT=tT1MM+tT2MM+tHYMM+tANMM, gTMO=tT1MO+tT2MO+tHYMO+tANMO;
+  ttr.innerHTML=`<td class="subj">TOTAL</td>
+    <td>${tT1MM}</td><td>${tT1MO}</td><td>${tT2MM}</td><td>${tT2MO}</td>
+    <td>${tHYMM}</td><td>${tHYMO}</td><td>${tANMM}</td><td>${tANMO}</td>
+    <td>${gT}</td><td>${gTMO}</td><td>-</td>`;
+  tb.appendChild(ttr);
+
+  // Bar chart
+  const bEl=document.getElementById('rc-bars'), lEl=document.getElementById('rc-barlbls');
+  bEl.innerHTML='';lEl.innerHTML='';
+  const maxMO=Math.max(...barData.map(b=>b.mo),1);
+  barData.forEach(b=>{
+    const h=Math.round((b.mo/maxMO)*88);
+    const c=document.createElement('div');c.className='bar-col';
+    c.innerHTML=`<div class="bar-num">${b.mo}</div><div class="bar-block" style="height:${h}px"></div>`;
+    bEl.appendChild(c);
+    const l=document.createElement('div');l.className='bar-lbl';l.textContent=b.label;
+    lEl.appendChild(l);
+  });
+
+  const pct=totMM>0?((totMO/totMM)*100).toFixed(0):0;
+  const passed=parseFloat(pct)>=33;
+  set('rc-maxm',totMM);set('rc-mobs',totMO);set('rc-pct',pct+' %');
+  const re=document.getElementById('rc-result');
+  re.textContent=passed?'Passed':'Failed';
+  re.className='sum-val '+(passed?'pass':'fail');
+
+  document.getElementById('form-section').style.display='none';
+  document.getElementById('report-output').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function goBack(){
+  document.getElementById('form-section').style.display='block';
+  document.getElementById('report-output').style.display='none';
+  buildFormTable();
+}
+
+// ── Download PNG ──
+document.getElementById('dlBtn').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '⏳ Preparing...';
+  btn.disabled = true;
+  try {
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    const el=document.getElementById('rc-wrap');
+    const canvas=await window.html2canvas(el,{
+      scale:2,useCORS:true,allowTaint:true,
+      backgroundColor:'#ffffff',logging:false,
+      scrollX:0,scrollY:0,
+      width:el.offsetWidth,height:el.offsetHeight
+    });
+    canvas.toBlob(blob=>{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download='report_card.png';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      btn.textContent='⬇ Download PNG'; btn.disabled=false;
+    },'image/png');
+  } catch(e){
+    console.error(e);
+    alert('Download failed. Use "Print / Save PDF" instead — choose "Save as PDF" in the print dialog.');
+    btn.textContent='⬇ Download PNG'; btn.disabled=false;
+  }
+});
+
+// ── Logo handling ──
+let logoDataURL = null;
+
+document.getElementById("logoFile").addEventListener("change", function(){
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    logoDataURL = e.target.result;
+    document.getElementById("logoPreview").src = logoDataURL;
+    document.getElementById("logoPreviewWrap").style.display = "flex";
+    document.getElementById("logoPlaceholder").style.display = "none";
+  };
+  reader.readAsDataURL(file);
+});
+
+function removeLogo(){
+  logoDataURL = null;
+  document.getElementById("logoFile").value = "";
+  document.getElementById("logoPreviewWrap").style.display = "none";
+  document.getElementById("logoPlaceholder").style.display = "flex";
+  const box = document.getElementById("rcLogoBox");
+  box.innerHTML = '<span style="line-height:1.3;font-size:.45rem;text-align:center">SCHOOL<br>LOGO</span>';
+}
+
+function applyLogoToCard(){
+  const box = document.getElementById("rcLogoBox");
+  if(logoDataURL){
+    box.innerHTML = '<img src="'+logoDataURL+'" alt="School Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+  } else {
+    box.innerHTML = '<span style="line-height:1.3;font-size:.45rem;text-align:center">SCHOOL<br>LOGO</span>';
+  }
+}
+
+buildFormTable();
+</script>
+</body>
+</html>
